@@ -36,22 +36,8 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 # -----------------------------
-# LOAD DATA
+# LOAD DATA (NO CACHE PROBLEMS)
 # -----------------------------
-@st.cache_data
-def load_data():
-    df = pd.read_excel(
-        "Unilever Acronym List - Multiple Lookup (1).xlsx",
-        sheet_name=0,
-        engine="openpyxl"
-    )
-    df.columns = [c.strip() for c in df.columns]
-    df = df.iloc[:, :2]
-    df.columns = ["Acronym", "Definition"]
-    df["Acronym"] = df["Acronym"].astype(str).str.strip()
-    df["Definition"] = df["Definition"].astype(str).str.strip()
-    return df.dropna()
-
 @st.cache_data(ttl=0)
 def load_data():
     df = pd.read_excel(
@@ -64,7 +50,7 @@ def load_data():
     df = df.iloc[:, :2]
     df.columns = ["Acronym", "Definition"]
 
-    # Strong cleaning (THIS IS THE KEY)
+    # Strong cleaning
     df["Acronym"] = (
         df["Acronym"]
         .astype(str)
@@ -80,9 +66,20 @@ def load_data():
 
     return df.dropna()
 
+# Load the data
+df = load_data()
+
+# -----------------------------
+# APP UI
+# -----------------------------
+st.title("📘 Acronym Dictionary")
+st.write("Internal reference tool for acronym definitions.")
+
+search = st.text_input("Enter an acronym (e.g. POP, MPT, FDTC):")
 
 if search:
-    results = df["Acronym"].str.contains(search.strip().upper(), nan=False)
+    results = df[df["Acronym"].str.contains(search.strip().upper(), na=False)]
+
     if results.empty:
         st.warning("No results found.")
     else:
