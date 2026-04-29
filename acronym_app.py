@@ -36,58 +36,15 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 # -----------------------------
-# LOAD DATA (CACHED, STABLE)
+# LOAD DATA FROM ALL SHEETS (ROBUST)
 # -----------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_excel(
-        "Unilever Acronym List - Multiple Lookup (1).xlsx",
-        sheet_name=0,
-        engine="openpyxl"
-    )
+    excel_file = "Unilever Acronym List - Multiple Lookup (1).xlsx"
+    xls = pd.ExcelFile(excel_file, engine="openpyxl")
 
-    df = df.iloc[:, :2]
-    df.columns = ["Acronym", "Definition"]
+    all_rows = []
 
-    df["Acronym"] = (
-        df["Acronym"]
-        .astype(str)
-        .str.strip()
-        .str.upper()
-    )
-
-    df["Definition"] = (
-        df["Definition"]
-        .astype(str)
-        .str.strip()
-    )
-
-    return df.dropna()
-
-# -----------------------------
-# MANUAL REFRESH (KEY FIX)
-# -----------------------------
-st.sidebar.title("Admin")
-if st.sidebar.button("🔄 Refresh data"):
-    st.cache_data.clear()
-    st.rerun()
-
-# Load data
-df = load_data()
-
-# -----------------------------
-# APP UI
-# -----------------------------
-st.title("📘 Acronym Dictionary")
-st.write("Internal reference tool for acronym definitions.")
-
-search = st.text_input("Enter an acronym (e.g. POP, MPT, FDTC):")
-
-if search:
-    results = df[df["Acronym"].str.contains(search.strip().upper(), na=False)]
-
-    if results.empty:
-        st.warning("No results found.")
-    else:
-        st.dataframe(results, use_container_width=True)
+    for sheet in xls.sheet_names:
+        raw = pd.read_excel(xls, sheet_name=sheet, header=None)
 
