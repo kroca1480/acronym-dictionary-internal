@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import os
 
 # -----------------------------
 # PAGE CONFIGURATION
@@ -36,21 +37,21 @@ if not st.session_state["authenticated"]:
     st.stop()
 
 # -----------------------------
-# LOAD DATA (NO CACHE PROBLEMS)
+# LOAD DATA (FAST + SAFE)
 # -----------------------------
-@st.cache_data(ttl=0)
-def load_data():
+EXCEL_FILE = "Unilever Acronym List - Multiple Lookup (1).xlsx"
+
+@st.cache_data
+def load_data(last_modified):
     df = pd.read_excel(
-        "Unilever Acronym List - Multiple Lookup (1).xlsx",
+        EXCEL_FILE,
         sheet_name=0,
         engine="openpyxl"
     )
 
-    # Keep only first two columns
     df = df.iloc[:, :2]
     df.columns = ["Acronym", "Definition"]
 
-    # Strong cleaning
     df["Acronym"] = (
         df["Acronym"]
         .astype(str)
@@ -66,8 +67,9 @@ def load_data():
 
     return df.dropna()
 
-# Load the data
-df = load_data()
+# Get file timestamp to auto‑invalidate cache
+last_modified = os.path.getmtime(EXCEL_FILE)
+df = load_data(last_modified)
 
 # -----------------------------
 # APP UI
