@@ -52,18 +52,37 @@ def load_data():
     df["Definition"] = df["Definition"].astype(str).str.strip()
     return df.dropna()
 
-df = load_data()
+@st.cache_data(ttl=0)
+def load_data():
+    df = pd.read_excel(
+        "Unilever Acronym List - Multiple Lookup (1).xlsx",
+        sheet_name=0,
+        engine="openpyxl"
+    )
 
-# -----------------------------
-# APP UI
-# -----------------------------
-st.title("📘 Acronym Dictionary")
-st.write("Internal reference tool for acronym definitions.")
+    # Keep only first two columns
+    df = df.iloc[:, :2]
+    df.columns = ["Acronym", "Definition"]
 
-search = st.text_input("Enter an acronym (e.g. POP, MPT, FDTC):")
+    # Strong cleaning (THIS IS THE KEY)
+    df["Acronym"] = (
+        df["Acronym"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
+    df["Definition"] = (
+        df["Definition"]
+        .astype(str)
+        .str.strip()
+    )
+
+    return df.dropna()
+
 
 if search:
-    results = df[df["Acronym"].str.upper() == search.upper()]
+    results = df["Acronym"].str.contains(search.strip().upper(), nan=False)
     if results.empty:
         st.warning("No results found.")
     else:
